@@ -20,12 +20,18 @@ from ..records.models import VocabularyType
 class VocabularyTypeComponent(ServiceComponent):
     """Set the record's vocabulary type."""
 
+    valid_types_cache = {}
+
     def _set_type(self, data, record):
         type_id = data.pop('type', None)
         if type_id:
             try:
-                record.type = VocabularyType.query.filter_by(
-                    id=type_id['id']).one()
+                if type_id['id'] not in self.valid_types_cache:
+                    t = VocabularyType.query.filter_by(id=type_id['id']).one()
+                    self.valid_types_cache[type_id['id']] = t
+                else:
+                    t = self.valid_types_cache[type_id['id']]
+                record.type = t
             except NoResultFound:
                 raise ValidationError(
                     _('The vocabulary type does not exists.'),
